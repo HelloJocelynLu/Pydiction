@@ -124,7 +124,7 @@ if !exists("*s:SetVals")
         " Set the popup menu height:
         let s:pydiction_save_pumheight = &pumheight
         if !exists('g:pydiction_menu_height')
-            let g:pydiction_menu_height = 8
+            let g:pydiction_menu_height = 5
         endif
         let &pumheight = g:pydiction_menu_height
 
@@ -145,4 +145,5 @@ if !exists("*s:RestoreVals")
         return ''
     endfunction
 endif
+
 

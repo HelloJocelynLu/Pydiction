@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 
 pydiction.py 1.2.3 by Ryan Kulla (rkulla AT gmail DOT com).
@@ -23,7 +22,7 @@ Example: The following will append all the "time" and "math" modules'
 
 
 __author__ = "Ryan Kulla (rkulla AT gmail DOT com)"
-__version__ = "1.2.3"
+__version__ = "2.0.0"
 __copyright__ = "Copyright (c) 2003-2014 Ryan Kulla"
 
 
@@ -31,6 +30,7 @@ import os
 import sys
 import types
 import shutil
+from argparse import ArgumentParser
 
 
 # Path/filename of the vim dictionary file to write to:
@@ -58,7 +58,7 @@ def get_submodules(module_name, submodules):
             if isinstance(getattr(imported_module, mod_attr), types.ModuleType):
                 submodules.append(module_name + '.' + mod_attr)
         except AttributeError as e:
-            print e
+            print(e)
 
     return submodules
 
@@ -79,11 +79,16 @@ def get_format(imported_module, mod_attr, use_prefix):
         else:
             format = format_noncallable
     except AttributeError as e:
-        print e
+        print(e)
 
     return format
 
-def write_dictionary(module_name, module_list):
+
+def inner_use(module_name):
+    return any([x.startswith('_') for x in module_name.split('.')])
+
+
+def write_dictionary(module_name, module_list, extra, alias=None):
     """Write to module attributes to the vim dictionary file."""
     python_version = '%s.%s.%s' % get_python_version()
 
@@ -93,7 +98,6 @@ def write_dictionary(module_name, module_list):
         return
 
     mod_attrs = dir(imported_module)
-
     # If a module was passed on the command-line we'll call it a root module
     if module_name in module_list:
         try:
@@ -104,13 +108,18 @@ def write_dictionary(module_name, module_list):
             module_version, python_version, sys.platform)
     else:
         module_info = ''
-
-    write_to.write('--- import %s %s---\n' % (module_name, module_info))
+    if not inner_use(module_name):
+        write_to.write('--- import %s %s---\n' % (module_name, module_info))
+        if alias and module_name in module_list:
+            extra.append('--- import %s (as alias %s)---\n' % (module_name, alias))
 
     for mod_attr in mod_attrs:
         format = get_format(imported_module, mod_attr, True)
         if format != '':
-            write_to.write(format % (module_name, mod_attr) + '\n')
+            if not inner_use(module_name+'.'+mod_attr):
+                write_to.write(format % (module_name, mod_attr) + '\n')
+            if alias and not inner_use(format % (alias, mod_attr)) and module_name in module_list:
+                extra.append(format % (alias, mod_attr) + '\n')
 
     # Generate submodule names by themselves, for when someone does
     # "from foo import bar" and wants to complete bar.baz.
@@ -122,19 +131,21 @@ def write_dictionary(module_name, module_list):
         # Get the "import" part of the module. E.g., 'expat'
         # if the module name was 'xml.parsers.expat'
         second_part = module_name[module_name.rfind('.') + 1:]
-        write_to.write('--- from %s import %s ---\n' %
-                       (first_part, second_part))
-        for mod_attr in mod_attrs:
-            format = get_format(imported_module, mod_attr, True)
-            if format != '':
-                write_to.write(format % (second_part, mod_attr) + '\n')
+        if not inner_use(first_part+'.'+second_part):
+            write_to.write('--- from %s import %s ---\n' %
+                            (first_part, second_part))
+            for mod_attr in mod_attrs:
+                format = get_format(imported_module, mod_attr, True)
+                if format != '' and not inner_use(second_part+'.'+mod_attr):
+                    write_to.write(format % (second_part, mod_attr) + '\n')
 
     # Generate non-fully-qualified module names:
-    write_to.write('--- from %s import * ---\n' % module_name)
-    for mod_attr in mod_attrs:
-        format = get_format(imported_module, mod_attr, False)
-        if format != '':
-            write_to.write(format % mod_attr + '\n')
+    if not inner_use(module_name):
+        write_to.write('--- from %s import * ---\n' % module_name)
+        for mod_attr in mod_attrs:
+            format = get_format(imported_module, mod_attr, False)
+            if format != '' and not inner_use(mod_attr):
+                write_to.write(format % mod_attr + '\n')
 
 
 def my_import(name):
@@ -177,7 +188,7 @@ def get_yesno(msg="[Y/n]?"):
 
     """
     while True:
-        answer = raw_input(msg)
+        answer = input(msg)
         if answer == '':
             return True
         elif len(answer):
@@ -189,24 +200,24 @@ def get_yesno(msg="[Y/n]?"):
                 return False
                 break
             else:
-                print "Invalid option. Please try again."
+                print("Invalid option. Please try again.")
                 continue
 
 
-def main(write_to, module_list):
+def main(write_to, module_list, alias = None):
     """Generate a dictionary for Vim of python module attributes."""
     submodules = []
 
     for module_name in module_list:
         try:
             my_import(module_name)
-        except ImportError, err:
-            print "Couldn't import: %s. %s" % (module_name, err)
+        except ImportError as err:
+            print("Couldn't import: %s. %s" % (module_name, err))
             module_list.remove(module_name)
 
     # Step through each command line argument:
     for module_name in module_list:
-        print "Trying module: %s" % module_name
+        print("Trying module: %s" % module_name)
         submodules = get_submodules(module_name, submodules)
 
         # Step through the current module's submodules:
@@ -221,15 +232,20 @@ def main(write_to, module_list):
     submodules.sort()
 
     # Step through all of the modules and submodules to create the dict file:
+    extra = []
     for submodule_name in submodules:
-        write_dictionary(submodule_name, module_list)
-
+        write_dictionary(submodule_name, module_list, extra, alias)
+    
+    if extra:
+        for line in extra:
+            write_to.write(line)
+    
     if STDOUT_ONLY:
         return
 
     # Close and Reopen the file for reading and remove all duplicate lines:
     write_to.close()
-    print "Removing duplicates..."
+    print("Removing duplicates...")
     f = open(PYDICTION_DICT, 'r')
     file_lines = f.readlines()
     file_lines = remove_duplicates(file_lines)
@@ -243,7 +259,7 @@ def main(write_to, module_list):
     for attr in file_lines:
         f.write(attr)
     f.close()
-    print "Done."
+    print("Done.")
 
 
 def get_python_version():
@@ -251,20 +267,42 @@ def get_python_version():
     return sys.version_info[0:3]
 
 
-def remove_existing_modules(module_list):
-    """Removes any existing modules from module list to try"""
-    f = open(PYDICTION_DICT, 'r')
-    file_lines = f.readlines()
+def remove_module(module_name, file_lines):
+    """Remove any lines in file_lines related to module_name"""
+    should_drop = []
+    remove = False
+    for line in file_lines:
+        if line.find('--- import %s' % module_name) != -1:
+            remove=True
+        elif line.find('--- import ') != -1:
+            remove=False
+        if remove:
+            should_drop.append(line)
+    for item in should_drop:
+        file_lines.remove(item)
+    return should_drop
+
+
+def ask_remove_modules(module_list):
+    """Ask if modules need to be updated. If no, removes any existing modules from 
+        module list to try; If yes, remove those modules and update them later."""
+    with open(PYDICTION_DICT, 'r') as f:
+        file_lines = f.readlines()
+
+    update_modules = []
 
     for module_name in module_list:
         for line in file_lines:
-            if line.find('--- import %s ' % module_name) != -1:
-                print '"%s" already exists in %s. Skipping...' % \
-                    (module_name, PYDICTION_DICT)
-                module_list.remove(module_name)
-                break
-    f.close()
-    return module_list
+            if line.find('--- import %s' % module_name) != -1:
+                answer = get_yesno('"%s" already exists in %s. Do you want to update [Y/n]?' % \
+                    (module_name, PYDICTION_DICT))
+                if not (answer):
+                    module_list.remove(module_name)
+                    break
+                else:
+                    update_modules.append(module_name)
+                    break
+    return update_modules, module_list
 
 
 if __name__ == '__main__':
@@ -277,44 +315,67 @@ if __name__ == '__main__':
         sys.exit("%s requires at least one argument. None given." %
                  sys.argv[0])
 
-    module_list = sys.argv[1:]
+    parser = ArgumentParser(description='Generate complete-dict for vim.')
+    parser.add_argument("-v", "--version", action="version", 
+                        version="Pydiction {:s}".format(__version__),
+                        help="print version and exit")
+    parser.add_argument("-d", "--dry_run", action="store_true",
+                        default=False, help="Write the results to stdout instead of file")
+    parser.add_argument("-a", "--alias", default=None, nargs='?', help="alias of the module")
+    parser.add_argument("modules", default=[], nargs='*', help="module names")
+    args = parser.parse_args()
 
-    if '-v' in sys.argv:
+    module_list = args.modules
+
+    if args.dry_run:
         write_to = sys.stdout
-        module_list.remove('-v')
         STDOUT_ONLY = True
-    elif os.path.exists(PYDICTION_DICT):
-        module_list = remove_existing_modules(sys.argv[1:])
+    if args.alias and len(module_list) != 1:
+        sys.exit("Only one module can be added with alias!")
+    if os.path.exists(PYDICTION_DICT):
+        update_modules, module_list = ask_remove_modules(module_list)
 
-        if len(module_list) < 1:
-            # Check if there's still enough command-line arguments:
-            sys.exit("Nothing new to do. Aborting.")
-
-        if os.path.exists(PYDICTION_DICT_BACKUP):
+        if os.path.exists(PYDICTION_DICT_BACKUP) and not STDOUT_ONLY:
             answer = get_yesno('Overwrite existing backup "%s" [Y/n]? ' %
                                 PYDICTION_DICT_BACKUP)
             if (answer):
-                print "Backing up old dictionary to: %s" % \
-                    PYDICTION_DICT_BACKUP
+                print("Backing up old dictionary to: %s" % \
+                    PYDICTION_DICT_BACKUP)
                 try:
                     shutil.copyfile(PYDICTION_DICT, PYDICTION_DICT_BACKUP)
-                except IOError, err:
-                    print "Couldn't back up %s. %s" % (PYDICTION_DICT, err)
+                except IOError as err:
+                    print("Couldn't back up %s. %s" % (PYDICTION_DICT, err))
             else:
-                print "Skipping backup..."
+                print("Skipping backup...")
 
-            print 'Appending to: "%s"' % PYDICTION_DICT
+            print('Appending to: "%s"' % PYDICTION_DICT)
         else:
-            print "Backing up current %s to %s" % \
-                (PYDICTION_DICT, PYDICTION_DICT_BACKUP)
+            print("Backing up current %s to %s" % \
+                (PYDICTION_DICT, PYDICTION_DICT_BACKUP))
             try:
                 shutil.copyfile(PYDICTION_DICT, PYDICTION_DICT_BACKUP)
-            except IOError, err:
-                print "Couldn't back up %s. %s" % (PYDICTION_DICT, err)
+            except IOError as err:
+                print("Couldn't back up %s. %s" % (PYDICTION_DICT, err))
     else:
-        print 'Creating file: "%s"' % PYDICTION_DICT
+        print('Creating file: "%s"' % PYDICTION_DICT)
+    
+    if len(update_modules):
+        with open(PYDICTION_DICT, 'r') as rf:
+            file_lines = rf.readlines()
+        for module in update_modules:
+            dropped = remove_module(module, file_lines)
+        if not STDOUT_ONLY:
+            with open(PYDICTION_DICT, 'w') as wf:
+                for line in file_lines:
+                    wf.write(line)
+        else:
+            write_to.write('>>>>>>>>>>>>>> would be remove <<<<<<<<<<<<<<<<<\n')
+            for item in dropped:
+                write_to.write(item)
 
     if not STDOUT_ONLY:
         write_to = open(PYDICTION_DICT, 'a')
+    else:
+        write_to.write('>>>>>>>>>>>>>>>> would be added <<<<<<<<<<<<<<<<<<<\n')
 
-    main(write_to, module_list)
+    main(write_to, module_list, args.alias)

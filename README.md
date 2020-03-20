@@ -26,14 +26,12 @@ omni-completion too. See the `Tips` section for how to get the best of all world
 
 Installation
 ============
-If you have Pathogen installed:
 
-    cd ~/.vim/bundle
-    git clone https://github.com/rkulla/pydiction.git
-
-or use a plugin manager like Vimogen (https://github.com/rkulla/vimogen) to install and manage Pydiction and all of your plugins.
+    git clone https://github.com/HelloJocelynLu/Pydiction.git ~/.vim/bundle
 
 Otherwise:
+
+    In the after/ftplugin/ directory, there's a file called python_pydiction.vim.
 
     - UNIX/LINUX/OSX: Put python_pydiction.vim in ~/.vim/after/ftplugin/ 
     Create this directory if doesn't yet exist. Vim looks there automatically
@@ -54,9 +52,9 @@ then make sure you set g:pydiction_location to the full path of where you instal
     
     let g:pydiction_location = '/path/to/complete-dict'
 
-for example, if you used Pathogen to install Pydiction, you would set this to:
+for example, if you install Pydiction with the `git clone` line, you would set this to:
 
-    let g:pydiction_location = '/home/user/.vim/bundle/pydiction/complete-dict'
+    let g:pydiction_location = '$HOME/.vim/bundle/pydiction/complete-dict'
 
 and the dictionary will be available to all of your virtualenv's as well.
 
@@ -64,7 +62,7 @@ You can change the height of the completion menu by setting g:pydiction_menu_hei
     
     let g:pydiction_menu_height = 3
 
-The default menu height is 8, meaning 8 items at a time will be shown. Some people prefer more or less and you can make it as large as you want since it will automatically know where to position the menu to be visible.
+The default menu height is 5, meaning 5 items at a time will be shown. Some people prefer more or less and you can make it as large as you want since it will automatically know where to position the menu to be visible.
 
 If you want to configure other things, such as how to get Pydiction to work with other plugins like `SnipMate` or the color of the menu, see the `Tips` section of this documentation.
 
@@ -165,10 +163,19 @@ You can skip this section if you don't plan to add more modules to complete-dict
 This is the Python script used to create the "complete-dict" Vim dictionary file. I have curated and bundled a default complete-dict for your use. I created it using a Linux system, so there won't be many real win32 specific modules in it. You're free to run pydiction.py to add or upgrade as many modules as you need. The dictionary file will still work if you're using windows, but it won't complete win32 related modules unless you tell it to. 
 
 USAGE: At a command prompt, run:
+    $ python pydiction.py [-h] [-v] [-d] [-a [ALIAS]] [modules [modules ...]]
 
-    $ python pydiction.py <module> [<module> ...] [-v]
+Generate complete-dict for vim.
 
-(You need to have at least python 2.x installed.)
+positional arguments:
+  modules               module names
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -v, --version         print version and exit
+  -d, --dry_run         Write the results to stdout instead of file
+  -a [ALIAS], --alias [ALIAS]
+                        alias of the module
 
 Say you wanted to add a module called "mymodule" to complete-dict. Do the following:
 
@@ -178,15 +185,23 @@ You can input more than one module name on the command-line by separating them w
 
     $ python pydiction.py mymodule1 mymodule2 mymodule3
 
-The -v option will just write the results to stdout (standard output) instead of the complete-dict file:
+The -d/--dry_run option will just write the results to stdout (standard output) instead of the complete-dict file:
 
-    $ ./pydiction.py -v datetime math
+    $ python pydiction.py -d datetime math
 
 If the backup file "complete-dict.last" doesn't exist in the current directory, pydiction.py will create it for you. You should always keep a backup of your last working dictionary in case anything goes wrong, as it can get tedious having to recreate the file from scratch.
 
 If complete-dict.last already exists, the script will ask if you want to overwrite your old backup with the new backup.
 
-If you try to add a module that already exists in complete-dict, Pydiction will tell you it already exists, so don't worry about adding duplicates. In fact you can't add duplicates because every time pydiction.py runs it looks for and removes any duplicates in the file.
+If you try to add a module that already exists in complete-dict, Pydiction will tell you it already exists, so don't worry about adding duplicates. In fact you can't add duplicates because every time pydiction.py runs it looks for and removes any duplicates in the file. You would be asked if you want to update the existing module.
+
+If you want to add alias for your module, you can achieve it by:
+    
+    $ python pydiction.py -a alias modules
+
+Say you want to call pd instead of pandas (i.e.: import pandas as pd), you can do:
+
+    $ python pydiction.py -a pd pandas
 
 When pydiction.py adds new modules to complete-dict, it does so in two phases. First it adds the fully-qualified name of the module. For example:
 
@@ -279,7 +294,7 @@ About python_pydiction.vim
 ==========================
 See the `Usage (vim)` section if you just want to know how to use Pydiction inside of Vim. This section will go into detail what this plugin does behind the scenes.
 
-Pydiction version 1.0 and greater uses a file called python_pydiction.vim, which is an ftplugin that only activates when you're editing a python file (e.g., you're editing a file with a .py extension or you've manually typed `:set filetype=python`). 
+Pydiction version 1.0 and greater uses a file called python_pydiction.vim (it lives in the after/ftplugin/ directory), which is an ftplugin that only activates when you're editing a python file (e.g., you're editing a file with a .py extension or you've manually typed `:set filetype=python`). 
 
 Past versions of pydiction didn't use a plugin but only required you to change the value of "isk" in your vimrc, which was not desirable. Version 1.0 and greater do not require you to manually change the value of isk. It now safely changes isk for you temporarily by only setting it while you're doing Tab-completion of Python code. It automatically changes isk back to its original value whenever Tab-completion isn't being activated. Again, only Tab-completion causes Pydiction to activate; not even other forms of ins-completion, such as `<Ctrl-x>` or `<Ctrl-n>` completion will activate Pydiction. So you're still free to use those other types of completion whenever you want to.
 
@@ -319,10 +334,10 @@ You can create your own complete-dict if you don't want to use the default one. 
 
 The default complete-dict currently contains python keywords: `and` `as` `assert` `break` `class` `continue` `def` `del` `elif` `else` `except` `exec` `finally` `for` `from` `global` `if` `import` `in` `is` `lambda` `nonlocal` `not` `or` `pass` `print` `raise` `return` `try` `while` `with` `yield`
 
-It also contains most of the standard library and built-ins:  `__builtin__` `__future__` `os` `sys` `time` `re` `string` `str` `Tkinter` `urllib` etc.
+It also contains most of the standard library and built-ins:  `__builtin__` `__future__` `os` `sys` `time` `re` `string` `str` `urllib` etc.
 
 It even contains complete-dict even comes with many third-party libraries such
-as: `Django` `Twisted` `Flask` `Requests` `Numpy` `Psycopg2` `PyGreSQL` `SQLite3` `MySQLdb` `ZSI` `LDAP` `OpenGL` `Pygame` `wxPython` `PyGTK` `PyQT4` `Urwid` `PyOgg` `Bcrypt` `OpenID` `GnuPGInterface` `OpenSSL` `lxml` `Scrapy` `Celery` `Pygments` and more.
+as: `Pandas` `Numpy` `Sklearn` and more.
 
 And it contains useful dunder methods, conventions, etc such as: `self` `object` `__init__(` `__name__` `__main__` etc. This type of thing was manually added near the top of the bundled file. Anything you want to always appear first should go near the top of the file since it reads top-down.
 
@@ -351,12 +366,7 @@ If you try to recreate complete-dict from scratch, you'll need to manually add t
 
 If you don't want certain things to Tab-complete, such as Python keywords or certain modules, you can just delete them by hand from complete-dict.
 
-Pydiction doesn't ignore "private" attributes or methods. I.e., those starting (but not ending) with one or two underscores, e.g., "_foo" or "__foo".  I have deleted most things starting with single underscore or double underscores from the included complete-dict just to keep it a little more sane since there were so many.  Python doesn't force things to be private, and you're free to add them if and when you want them. If you find any that you want to delete, open complete-dict in vim and run
-
-    :g/\._[a-zA-Z]/d
-    :g/^_[a-zA-Z]/d
-    :g/^\%(_\=[^_]\)*\zs__\%(.\{-}__\)\@!/d
-    etc...
+Pydiction 2.0 will ignore "private" attributes or methods. I.e., those starting (but not ending) with one or two underscores, e.g., "_foo" or "__foo".
 
 Pydiction vs other forms of completion
 ======================================
@@ -374,7 +384,7 @@ Pydiction vs other forms of completion
 
 - Because Pydiction uses a dictionary file of possible completion items, it can complete 3rd party modules more accurately than other methods. You have full control over what it can and cannot complete. If it's unable to complete anything you can use pydiction.py to add a new module's contents to the dictionary, or you can manually add them using a text editor. In other words, you can teach Pydiction to learn what new things it can complete, just like you can with any snippet-based system -- except the snippets are for autocompleting the rest of a word and not for pasting entire templates like SnipMate does.
 
-- The dictionary is just a text file, which makes it portable across all platforms. For example, if you're a Pyramid user you can add all the Pyramid related modules to the dictionary file.py. The latest default complete-dict already contains all of the standard library, Python keywords, and many 3rd party modules like Django, Twisted, Numpy, Flask, Requests, Pygame, wxPython, PyQT4, PyGTK, Urwid, ZSI, LDAP, MySQLdb, Psycopg2, PyGreSQL, OpenId, OpenSSL, Celery, Scrapy, lxml, Pygments and much more. To see the full-list of python modules Pydiction knows about, open complete-dict in Vim and run `:g/root modules`.
+- The dictionary is just a text file, which makes it portable across all platforms. For example, if you're a Pyramid user you can add all the Pyramid related modules to the dictionary file.py.
 
 - If you want to you can use use Pydiction in tandem with Vim 7's builtin omni-completion for Python (pythoncomplete.vim) as well as other forms of completion like SnipMate or Python-mode (see the Tips section). In fact, they can all make a great team.
 
