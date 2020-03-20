@@ -511,6 +511,27 @@ The workaround is to edit complete-dict and manually delete the related module s
           endif
         endif
 
+
+My ~/.vimrc setting
+==================
+
+    filetype plugin indent on
+    filetype indent on
+    syntax on
+    set encoding=utf8
+    set tabstop=4
+    set shiftwidth=4
+    set mouse=i
+    set expandtab
+    set number
+    set smarttab
+    set laststatus=2
+    let g:pydiction_location = '~/.vim/bundle/pydiction/complete-dict'
+    imap <Leader>o <C-X><C-O>
+    imap <Leader>n <C-X><C-N>
+    imap <Leader>f <C-X><C-F>
+    
+
 Further reading
 ===============
 `:help ftplugin`
@@ -520,4 +541,4 @@ Further reading
 `:help popupmenu-keys`
 `:help iskeyword`
 
-http://docs.python.org/2/py-modindex.html
+
