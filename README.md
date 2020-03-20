@@ -27,7 +27,7 @@ omni-completion too. See the `Tips` section for how to get the best of all world
 Installation
 ============
 
-    git clone https://github.com/HelloJocelynLu/Pydiction.git ~/.vim/bundle
+    git clone https://github.com/HelloJocelynLu/Pydiction.git ~/.vim/pydiction
 
 Otherwise:
 
@@ -54,7 +54,7 @@ then make sure you set g:pydiction_location to the full path of where you instal
 
 for example, if you install Pydiction with the `git clone` line, you would set this to:
 
-    let g:pydiction_location = '$HOME/.vim/bundle/pydiction/complete-dict'
+    let g:pydiction_location = '$HOME/.vim/bundle/complete-dict'
 
 and the dictionary will be available to all of your virtualenv's as well.
 
@@ -281,7 +281,7 @@ To Tab-complete your own personal modules, you can put your functions in a separ
 
 you would then need to add myFoo to complete-dict by doing:
 
-    $ ./pydiction.py myFoo
+    $ python pydiction.py myFoo
 
 now you can complete myFoo.myBar() by doing:  
 
@@ -526,7 +526,8 @@ My ~/.vimrc setting
     set number
     set smarttab
     set laststatus=2
-    let g:pydiction_location = '~/.vim/bundle/pydiction/complete-dict'
+    set bs=2
+    let g:pydiction_location = '~/.vim/pydiction/complete-dict'
     imap <Leader>o <C-X><C-O>
     imap <Leader>n <C-X><C-N>
     imap <Leader>f <C-X><C-F>
