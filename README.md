@@ -54,7 +54,7 @@ then make sure you set g:pydiction_location to the full path of where you instal
 
 for example, if you install Pydiction with the `git clone` line, you would set this to:
 
-    let g:pydiction_location = '$HOME/.vim/bundle/complete-dict'
+    let g:pydiction_location = '$HOME/.vim/pydiction/complete-dict'
 
 and the dictionary will be available to all of your virtualenv's as well.
 
@@ -505,9 +505,9 @@ The workaround is to edit complete-dict and manually delete the related module s
           let g:pydiction_location = 'C:/vim/vimfiles/ftplugin/pydiction/complete-dict'
         else
           if system('uname')=~'Darwin'
-            let g:pydiction_location = '/Users/you/.vim/bundle/pydiction/complete-dict'
+            let g:pydiction_location = '/Users/you/.vim/pydiction/complete-dict'
           else
-            let g:pydiction_location = '/home/you/.vim/bundle/pydiction/complete-dict'
+            let g:pydiction_location = '/home/you/.vim/pydiction/complete-dict'
           endif
         endif
 
@@ -526,6 +526,7 @@ My ~/.vimrc setting
     set number
     set smarttab
     set laststatus=2
+    set noic
     set bs=2
     let g:pydiction_location = '~/.vim/pydiction/complete-dict'
     imap <Leader>o <C-X><C-O>

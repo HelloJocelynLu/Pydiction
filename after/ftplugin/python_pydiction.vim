@@ -3,7 +3,7 @@
 " ============================================================================
 "
 " Author: Ryan Kulla (rkulla AT gmail DOT com)
-" Version: 1.2.3, for Vim 7+
+" Version: 2.0.0, for Vim 7+
 " URL: http://www.vim.org/scripts/script.php?script_id=850
 " Installation: The easiest way is to use Pathogen and simply install
 "               everything to ~/.vim/bundle
@@ -119,7 +119,7 @@ if !exists("*s:SetVals")
         " Save the ins-completion options the user has set:
         let s:pydiction_save_cot = &completeopt
         " Have the completion menu show up for one or more matches:
-        let &completeopt = "menu,menuone"
+        let &completeopt = "menu,menuone,noinsert"
 
         " Set the popup menu height:
         let s:pydiction_save_pumheight = &pumheight
